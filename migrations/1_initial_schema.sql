@@ -1,0 +1,18 @@
+CREATE TABLE issue_statuses (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE issues (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status INTEGER NOT NULL REFERENCES issue_statuses (id),
+    parent INTEGER DEFAULT NULL REFERENCES issues (id)
+);
+
+CREATE TABLE issue_blockings (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    blocker INTEGER NOT NULL REFERENCES issues (id),
+    blocked INTEGER NOT NULL REFERENCES issues (id)
+);

@@ -1,0 +1,29 @@
+[package]
+name = "portable-issuer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies.tokio]
+version = "1.39.1"
+features = ["macros", "rt-multi-thread", "signal"] 
+
+[dependencies.tracing]
+version  = "0.1.40"
+
+[dependencies.tracing-subscriber]
+version = "0.3.18"
+features = ["env-filter"]
+
+[dependencies.thiserror]
+version = "1.0.63"
+
+[dependencies.axum]
+version = "0.7.5"
+
+[dependencies.sqlx]
+version = "0.8.0"
+features = ["runtime-tokio", "tls-native-tls"]
+
+[dependencies.clap]
+version = "4.5.11"
+features = ["derive"]
