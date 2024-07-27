@@ -27,3 +27,23 @@ features = ["runtime-tokio", "tls-native-tls"]
 [dependencies.clap]
 version = "4.5.11"
 features = ["derive"]
+
+[dependencies.async-walkdir]
+version = "2.0.0"
+
+[dependencies.futures]
+version = "0.3.30"
+
+[dependencies.tokio-util]
+version = "0.7.11"
+features = ["io"]
+
+[dependencies.tokio-stream]
+version = "0.1.15"
+
+[dependencies.serde]
+version = "1.0.204"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.120"

@@ -1,4 +1,4 @@
-use std::{error::Error, io};
+use std::{error::Error, io, path::PathBuf};
 
 use clap::Parser;
 use thiserror::Error;
@@ -46,6 +46,8 @@ enum MainError {
 struct Cli {
     #[clap(short = 'b', long = "bind-addr")]
     bind_addr: String,
+    #[clap(short = 's', long = "static")]
+    static_path: PathBuf,
 }
 
 fn setup_logger() -> Result<(), LogSetupError> {
@@ -62,14 +64,19 @@ fn setup_logger() -> Result<(), LogSetupError> {
     Ok(())
 }
 
-async fn run_server_app(bind_addr: &str) -> Result<(), AppError> {
-    let app = portable_issuer::router();
+async fn run_server_app(cli: &Cli) -> Result<(), AppError> {
+    let app = portable_issuer::router(&cli.static_path);
     let listener =
-        TcpListener::bind(bind_addr).await.map_err(AppError::Bind)?;
-    tracing::info!(bind_addr);
+        TcpListener::bind(&cli.bind_addr).await.map_err(AppError::Bind)?;
+    tracing::info!(bind_addr = cli.bind_addr);
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
-            let _ = signal::ctrl_c();
+            if let Err(error) = signal::ctrl_c().await {
+                tracing::error!(
+                    error = error.to_string(),
+                    "Failed to control C-C signal"
+                );
+            }
         })
         .await
         .map_err(AppError::Serve)?;
@@ -78,7 +85,7 @@ async fn run_server_app(bind_addr: &str) -> Result<(), AppError> {
 
 async fn try_main(cli: Cli) -> Result<(), MainError> {
     setup_logger()?;
-    run_server_app(&cli.bind_addr).await?;
+    run_server_app(&cli).await?;
     Ok(())
 }
 
