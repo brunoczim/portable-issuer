@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use serde::Serialize;
 
-pub trait ResponseStatus {
+pub trait ResponseStatusCode {
     fn status_code(&self) -> StatusCode;
 }
 
@@ -9,7 +9,7 @@ pub trait WithResultStatus {
     type Ok;
     type Err;
 
-    fn with_status(
+    fn with_http_status(
         self,
         status_code: StatusCode,
     ) -> Result<
@@ -17,7 +17,7 @@ pub trait WithResultStatus {
         <Self as WithResultStatus>::Err,
     >;
 
-    fn with_err_status(
+    fn with_err_http_status(
         self,
         status_code: StatusCode,
     ) -> Result<
@@ -30,7 +30,7 @@ impl<T, E> WithResultStatus for Result<T, E> {
     type Ok = T;
     type Err = E;
 
-    fn with_status(
+    fn with_http_status(
         self,
         status_code: StatusCode,
     ) -> Result<
@@ -40,7 +40,7 @@ impl<T, E> WithResultStatus for Result<T, E> {
         self.map(|data| WithStatusCode::new(status_code, data))
     }
 
-    fn with_err_status(
+    fn with_err_http_status(
         self,
         status_code: StatusCode,
     ) -> Result<
@@ -63,7 +63,7 @@ impl<T> WithStatusCode<T> {
     }
 }
 
-impl<T> ResponseStatus for WithStatusCode<T> {
+impl<T> ResponseStatusCode for WithStatusCode<T> {
     fn status_code(&self) -> StatusCode {
         self.status_code
     }

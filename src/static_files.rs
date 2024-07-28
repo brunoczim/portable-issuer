@@ -47,11 +47,11 @@ impl IntoResponse for RequestError {
 }
 
 #[derive(Debug)]
-struct App {
+struct Resources {
     base_dir: PathBuf,
 }
 
-impl App {
+impl Resources {
     async fn stream_file(
         &self,
         subpath: String,
@@ -74,11 +74,11 @@ impl App {
 }
 
 pub fn router(base_dir: impl Into<PathBuf>) -> Router {
-    let app = Arc::new(App { base_dir: base_dir.into() });
+    let resources = Arc::new(Resources { base_dir: base_dir.into() });
     Router::new().route(
         "/*path",
         get(move |extract::Path(subpath)| async move {
-            match app.stream_file(subpath).await {
+            match resources.stream_file(subpath).await {
                 Ok(stream) => {
                     (StatusCode::OK, Body::from_stream(stream)).into_response()
                 },

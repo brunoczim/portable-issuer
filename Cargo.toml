@@ -22,7 +22,7 @@ version = "0.7.5"
 
 [dependencies.sqlx]
 version = "0.8.0"
-features = ["runtime-tokio", "tls-native-tls"]
+features = ["runtime-tokio", "tls-native-tls", "sqlite"]
 
 [dependencies.clap]
 version = "4.5.11"

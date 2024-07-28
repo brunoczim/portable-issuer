@@ -1,19 +1,33 @@
 use std::error::Error;
 
-use axum::http::StatusCode;
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 
-use crate::status::ResponseStatus;
+use crate::status::ResponseStatusCode;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ApiResponse<T, E> {
     result: Result<T, E>,
 }
 
-impl<T, E> ResponseStatus for ApiResponse<T, E>
+impl<T, E> ApiResponse<T, E>
 where
-    T: Serialize + ResponseStatus,
-    E: Error + ResponseStatus,
+    T: Serialize + ResponseStatusCode,
+    E: Error + ResponseStatusCode,
+{
+    pub fn new(result: Result<T, E>) -> Self {
+        Self { result }
+    }
+}
+
+impl<T, E> ResponseStatusCode for ApiResponse<T, E>
+where
+    T: Serialize + ResponseStatusCode,
+    E: Error + ResponseStatusCode,
 {
     fn status_code(&self) -> StatusCode {
         match &self.result {
@@ -23,10 +37,20 @@ where
     }
 }
 
+impl<T, E> IntoResponse for ApiResponse<T, E>
+where
+    T: Serialize + ResponseStatusCode,
+    E: Error + ResponseStatusCode,
+{
+    fn into_response(self) -> Response {
+        (self.status_code(), Json(self)).into_response()
+    }
+}
+
 impl<T, E> Serialize for ApiResponse<T, E>
 where
-    T: Serialize + ResponseStatus,
-    E: Error + ResponseStatus,
+    T: Serialize + ResponseStatusCode,
+    E: Error + ResponseStatusCode,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -51,11 +75,11 @@ where
 
 impl<T, E> From<Result<T, E>> for ApiResponse<T, E>
 where
-    T: Serialize + ResponseStatus,
-    E: Error + ResponseStatus,
+    T: Serialize + ResponseStatusCode,
+    E: Error + ResponseStatusCode,
 {
     fn from(result: Result<T, E>) -> Self {
-        Self { result }
+        Self::new(result)
     }
 }
 

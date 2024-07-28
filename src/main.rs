@@ -1,6 +1,7 @@
 use std::{error::Error, io, path::PathBuf};
 
 use clap::Parser;
+use sqlx::{migrate::MigrateError, sqlite::SqliteConnectOptions, SqlitePool};
 use thiserror::Error;
 use tokio::{net::TcpListener, signal};
 use tracing::level_filters::LevelFilter;
@@ -24,6 +25,10 @@ enum AppError {
     Bind(#[source] io::Error),
     #[error("Failed to serve app")]
     Serve(#[source] io::Error),
+    #[error("Failed to connect to the pool")]
+    PoolConnect(#[source] sqlx::Error),
+    #[error("Failed to migrate database updates")]
+    Migrate(#[source] MigrateError),
 }
 
 #[derive(Debug, Error)]
@@ -48,6 +53,8 @@ struct Cli {
     bind_addr: String,
     #[clap(short = 's', long = "static")]
     static_path: PathBuf,
+    #[clap(short = 'd', long = "database", default_value = "database.bin")]
+    database: PathBuf,
 }
 
 fn setup_logger() -> Result<(), LogSetupError> {
@@ -65,7 +72,15 @@ fn setup_logger() -> Result<(), LogSetupError> {
 }
 
 async fn run_server_app(cli: &Cli) -> Result<(), AppError> {
-    let app = portable_issuer::router(&cli.static_path);
+    let pool_options = SqliteConnectOptions::new()
+        .foreign_keys(true)
+        .filename(&cli.database)
+        .create_if_missing(true);
+    let pool = SqlitePool::connect_with(pool_options)
+        .await
+        .map_err(AppError::PoolConnect)?;
+    sqlx::migrate!().run(&pool).await.map_err(AppError::Migrate)?;
+    let app = portable_issuer::router(&cli.static_path, pool);
     let listener =
         TcpListener::bind(&cli.bind_addr).await.map_err(AppError::Bind)?;
     tracing::info!(bind_addr = cli.bind_addr);
